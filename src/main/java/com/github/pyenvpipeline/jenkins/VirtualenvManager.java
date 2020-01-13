@@ -122,6 +122,7 @@ public class VirtualenvManager implements Serializable {
         String[] versionsPortions = versionPortion.split(Pattern.quote("."));
 
         boolean prePEP405 = true;
+        boolean noDownload = false;
 
         if (versionsPortions.length >= 3) {
             Integer major = Integer.parseInt(versionsPortions[0]);
@@ -129,6 +130,13 @@ public class VirtualenvManager implements Serializable {
 
             if ((major > 3) || ((major == 3) && (minor >= 6))) {
                 prePEP405 = false;
+            }
+
+            // Workaround unsupported python version of setuptools:
+            // The default behavior of virtualenv is to update pip/setuptools during creation.
+            // Since python < 3.5 would break virtualenv creation, add a --no-download option in that case
+            if ((major < 3) || (major == 3) && (minor < 5)) {
+                noDownload = true;
             }
         }
 
@@ -140,6 +148,10 @@ public class VirtualenvManager implements Serializable {
             command.add("-m");
             command.add("virtualenv");
             command.add("--python="+commandPath);
+
+            if (noDownload) {
+                command.add("--no-download");
+            }
         } else {
             command.add("-m");
             command.add("venv");
